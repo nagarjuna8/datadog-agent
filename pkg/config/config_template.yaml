@@ -146,6 +146,11 @@ api_key:
 #
 # The port for the go_expvar server
 # dogstatsd_stats_port: 5000
+#
+# If you want all statsd metrics coming from this host to be namespaced
+# in some way; you can configure the namspace below.
+# a metric that looks like `metric.name` will instead become `namespace.metric.name`
+# statsd_metric_namespace:
 {{ end -}}
 {{- if .LogsAgent }}
 # Logs agent
