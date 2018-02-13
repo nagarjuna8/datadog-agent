@@ -206,7 +206,8 @@ func (s *Server) worker(metricOut chan<- *metrics.MetricSample, eventOut chan<- 
 					dogstatsdExpvar.Add("EventPackets", 1)
 					eventOut <- *event
 				} else {
-					sample, err := parseMetricMessage(message)
+					metricPrefix := config.Datadog.GetString("statsd_metric_namespace")
+					sample, err := parseMetricMessage(message, metricPrefix)
 					if err != nil {
 						log.Errorf("Dogstatsd: error parsing metrics: %s", err)
 						dogstatsdExpvar.Add("MetricParseErrors", 1)

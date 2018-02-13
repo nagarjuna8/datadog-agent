@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 )
 
@@ -66,7 +65,7 @@ func TestGaugePacketCounter(t *testing.T) {
 }
 
 func TestParseGauge(t *testing.T) {
-	parsed, err := parseMetricMessage([]byte("daemon:666|g"))
+	parsed, err := parseMetricMessage([]byte("daemon:666|g"), "")
 
 	assert.NoError(t, err)
 
@@ -79,7 +78,7 @@ func TestParseGauge(t *testing.T) {
 }
 
 func TestParseCounter(t *testing.T) {
-	parsed, err := parseMetricMessage([]byte("daemon:21|c"))
+	parsed, err := parseMetricMessage([]byte("daemon:21|c"), "")
 
 	assert.NoError(t, err)
 
@@ -91,7 +90,7 @@ func TestParseCounter(t *testing.T) {
 }
 
 func TestParseCounterWithTags(t *testing.T) {
-	parsed, err := parseMetricMessage([]byte("custom_counter:1|c|#protocol:http,bench"))
+	parsed, err := parseMetricMessage([]byte("custom_counter:1|c|#protocol:http,bench"), "")
 
 	assert.NoError(t, err)
 
@@ -105,7 +104,7 @@ func TestParseCounterWithTags(t *testing.T) {
 }
 
 func TestParseHistogram(t *testing.T) {
-	parsed, err := parseMetricMessage([]byte("daemon:21|h"))
+	parsed, err := parseMetricMessage([]byte("daemon:21|h"), "")
 
 	assert.NoError(t, err)
 
@@ -117,7 +116,7 @@ func TestParseHistogram(t *testing.T) {
 }
 
 func TestParseTimer(t *testing.T) {
-	parsed, err := parseMetricMessage([]byte("daemon:21|ms"))
+	parsed, err := parseMetricMessage([]byte("daemon:21|ms"), "")
 
 	assert.NoError(t, err)
 
@@ -129,7 +128,7 @@ func TestParseTimer(t *testing.T) {
 }
 
 func TestParseSet(t *testing.T) {
-	parsed, err := parseMetricMessage([]byte("daemon:abc|s"))
+	parsed, err := parseMetricMessage([]byte("daemon:abc|s"), "")
 
 	assert.NoError(t, err)
 
@@ -141,7 +140,7 @@ func TestParseSet(t *testing.T) {
 }
 
 func TestParseDistribution(t *testing.T) {
-	parsed, err := parseMetricMessage([]byte("daemon:3.5|d"))
+	parsed, err := parseMetricMessage([]byte("daemon:3.5|d"), "")
 
 	assert.NoError(t, err)
 
@@ -152,7 +151,7 @@ func TestParseDistribution(t *testing.T) {
 }
 
 func TestParseSetUnicode(t *testing.T) {
-	parsed, err := parseMetricMessage([]byte("daemon:♬†øU†øU¥ºuT0♪|s"))
+	parsed, err := parseMetricMessage([]byte("daemon:♬†øU†øU¥ºuT0♪|s"), "")
 
 	assert.NoError(t, err)
 
@@ -164,7 +163,7 @@ func TestParseSetUnicode(t *testing.T) {
 }
 
 func TestParseGaugeWithTags(t *testing.T) {
-	parsed, err := parseMetricMessage([]byte("daemon:666|g|#sometag1:somevalue1,sometag2:somevalue2"))
+	parsed, err := parseMetricMessage([]byte("daemon:666|g|#sometag1:somevalue1,sometag2:somevalue2"), "")
 
 	assert.NoError(t, err)
 
@@ -178,7 +177,7 @@ func TestParseGaugeWithTags(t *testing.T) {
 }
 
 func TestParseGaugeWithHostTag(t *testing.T) {
-	parsed, err := parseMetricMessage([]byte("daemon:666|g|#sometag1:somevalue1,host:my-hostname,sometag2:somevalue2"))
+	parsed, err := parseMetricMessage([]byte("daemon:666|g|#sometag1:somevalue1,host:my-hostname,sometag2:somevalue2"), "")
 	assert.NoError(t, err)
 
 	assert.Equal(t, "daemon", parsed.Name)
@@ -192,7 +191,7 @@ func TestParseGaugeWithHostTag(t *testing.T) {
 }
 
 func TestParseGaugeWithSampleRate(t *testing.T) {
-	parsed, err := parseMetricMessage([]byte("daemon:666|g|@0.21"))
+	parsed, err := parseMetricMessage([]byte("daemon:666|g|@0.21"), "")
 
 	assert.NoError(t, err)
 
@@ -204,7 +203,7 @@ func TestParseGaugeWithSampleRate(t *testing.T) {
 }
 
 func TestParseGaugeWithPoundOnly(t *testing.T) {
-	parsed, err := parseMetricMessage([]byte("daemon:666|g|#"))
+	parsed, err := parseMetricMessage([]byte("daemon:666|g|#"), "")
 
 	assert.NoError(t, err)
 
@@ -216,7 +215,7 @@ func TestParseGaugeWithPoundOnly(t *testing.T) {
 }
 
 func TestParseGaugeWithUnicode(t *testing.T) {
-	parsed, err := parseMetricMessage([]byte("♬†øU†øU¥ºuT0♪:666|g|#intitulé:T0µ"))
+	parsed, err := parseMetricMessage([]byte("♬†øU†øU¥ºuT0♪:666|g|#intitulé:T0µ"), "")
 
 	assert.NoError(t, err)
 
@@ -230,36 +229,36 @@ func TestParseGaugeWithUnicode(t *testing.T) {
 
 func TestParseMetricError(t *testing.T) {
 	// not enough information
-	_, err := parseMetricMessage([]byte("daemon:666"))
+	_, err := parseMetricMessage([]byte("daemon:666"), "")
 	assert.Error(t, err)
 
-	_, err = parseMetricMessage([]byte("daemon:666|"))
+	_, err = parseMetricMessage([]byte("daemon:666|"), "")
 	assert.Error(t, err)
 
-	_, err = parseMetricMessage([]byte("daemon:|g"))
+	_, err = parseMetricMessage([]byte("daemon:|g"), "")
 	assert.Error(t, err)
 
-	_, err = parseMetricMessage([]byte(":666|g"))
+	_, err = parseMetricMessage([]byte(":666|g"), "")
 	assert.Error(t, err)
 
 	// too many value
-	_, err = parseMetricMessage([]byte("daemon:666:777|g"))
+	_, err = parseMetricMessage([]byte("daemon:666:777|g"), "")
 	assert.Error(t, err)
 
 	// unknown metadata prefix
-	_, err = parseMetricMessage([]byte("daemon:666|g|m:test"))
+	_, err = parseMetricMessage([]byte("daemon:666|g|m:test"), "")
 	assert.NoError(t, err)
 
 	// invalid value
-	_, err = parseMetricMessage([]byte("daemon:abc|g"))
+	_, err = parseMetricMessage([]byte("daemon:abc|g"), "")
 	assert.Error(t, err)
 
 	// invalid metric type
-	_, err = parseMetricMessage([]byte("daemon:666|unknown"))
+	_, err = parseMetricMessage([]byte("daemon:666|unknown"), "")
 	assert.Error(t, err)
 
 	// invalid sample rate
-	_, err = parseMetricMessage([]byte("daemon:666|g|@abc"))
+	_, err = parseMetricMessage([]byte("daemon:666|g|@abc"), "")
 	assert.Error(t, err)
 }
 
@@ -634,9 +633,7 @@ func TestEventMetadataMultiple(t *testing.T) {
 }
 
 func TestCustomNamespace(t *testing.T) {
-	testName := "testNamespace"
-	config.Datadog.SetDefault("statsd_metric_namespace", testName)
-	parsed, err := parseMetricMessage([]byte("daemon:21|ms"))
+	parsed, err := parseMetricMessage([]byte("daemon:21|ms"), "testNamespace")
 
 	assert.NoError(t, err)
 
@@ -645,7 +642,12 @@ func TestCustomNamespace(t *testing.T) {
 	assert.Equal(t, metrics.HistogramType, parsed.Mtype)
 	assert.Equal(t, 0, len(parsed.Tags))
 	assert.InEpsilon(t, 1.0, parsed.SampleRate, epsilon)
+}
 
-	// set back to default
-	config.Datadog.SetDefault("statsd_metric_namespace", "")
+func TestInvalidNamespace(t *testing.T) {
+	parsed, err := parseMetricMessage([]byte("daemon:21|ms"), "testNamespace.")
+
+	assert.NoError(t, err)
+
+	assert.Equal(t, "daemon", parsed.Name)
 }

@@ -14,7 +14,6 @@ import (
 
 	log "github.com/cihub/seelog"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 )
 
@@ -233,7 +232,7 @@ func parseEventMessage(message []byte) (*metrics.Event, error) {
 	return &event, nil
 }
 
-func parseMetricMessage(message []byte) (*metrics.MetricSample, error) {
+func parseMetricMessage(message []byte, namespace string) (*metrics.MetricSample, error) {
 	// daemon:666|g|#sometag1:somevalue1,sometag2:somevalue2
 	// daemon:666|g|@0.1|#sometag:somevalue"
 
@@ -280,14 +279,12 @@ func parseMetricMessage(message []byte) (*metrics.MetricSample, error) {
 	}
 
 	metricName := string(rawName)
-	if config.Datadog.GetString("statsd_metric_namespace") != "" {
-		metricPrefix := config.Datadog.GetString("statsd_metric_namespace")
-		if !strings.HasSuffix(metricPrefix, ".") {
-			metricPrefix += "."
-			metricName = metricPrefix + metricName
+	if namespace != "" {
+		if !strings.HasSuffix(namespace, ".") {
+			namespace += "."
+			metricName = namespace + metricName
 		}
 	}
-	fmt.Println(metricName)
 	metricType, ok := metricTypes[string(rawType)]
 	if !ok {
 		return nil, fmt.Errorf("invalid metric type for %q", message)
