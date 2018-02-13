@@ -10,9 +10,11 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+	"strings"
 
 	log "github.com/cihub/seelog"
 
+	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 )
 
@@ -243,7 +245,6 @@ func parseMetricMessage(message []byte) (*metrics.MetricSample, error) {
 	// Extract name, value and type
 	rawNameAndValue, remainder := nextField(message, fieldSeparator)
 	rawName, rawValue := nextField(rawNameAndValue, valueSeparator)
-
 	if rawValue == nil {
 		return nil, fmt.Errorf("invalid field format for %q", message)
 	}
@@ -279,7 +280,14 @@ func parseMetricMessage(message []byte) (*metrics.MetricSample, error) {
 	}
 
 	metricName := string(rawName)
-
+	if config.Datadog.GetString("statsd_metric_namespace") != "" {
+		metricPrefix := config.Datadog.GetString("statsd_metric_namespace")
+		if !strings.HasSuffix(metricPrefix, ".") {
+			metricPrefix += "."
+			metricName = metricPrefix + metricName
+		}
+	}
+	fmt.Println(metricName)
 	metricType, ok := metricTypes[string(rawType)]
 	if !ok {
 		return nil, fmt.Errorf("invalid metric type for %q", message)

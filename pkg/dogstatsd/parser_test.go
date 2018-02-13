@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 )
 
@@ -630,4 +631,21 @@ func TestEventMetadataMultiple(t *testing.T) {
 	assert.Equal(t, "aggKey", e.AggregationKey)
 	assert.Equal(t, "source test", e.SourceTypeName)
 	assert.Equal(t, "", e.EventType)
+}
+
+func TestCustomNamespace(t *testing.T) {
+	testName := "testNamespace"
+	config.Datadog.SetDefault("statsd_metric_namespace", testName)
+	parsed, err := parseMetricMessage([]byte("daemon:21|ms"))
+
+	assert.NoError(t, err)
+
+	assert.Equal(t, "testNamespace.daemon", parsed.Name)
+	assert.Equal(t, 21.0, parsed.Value)
+	assert.Equal(t, metrics.HistogramType, parsed.Mtype)
+	assert.Equal(t, 0, len(parsed.Tags))
+	assert.InEpsilon(t, 1.0, parsed.SampleRate, epsilon)
+
+	// set back to default
+	config.Datadog.SetDefault("statsd_metric_namespace", "")
 }
