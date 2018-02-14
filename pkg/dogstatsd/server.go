@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net"
 	"runtime"
+	"strings"
 	"sync"
 
 	log "github.com/cihub/seelog"
@@ -207,6 +208,11 @@ func (s *Server) worker(metricOut chan<- *metrics.MetricSample, eventOut chan<- 
 					eventOut <- *event
 				} else {
 					metricPrefix := config.Datadog.GetString("statsd_metric_namespace")
+					if metricPrefix != "" {
+						if !strings.HasSuffix(metricPrefix, ".") {
+							metricPrefix = metricPrefix + "."
+						}
+					}
 					sample, err := parseMetricMessage(message, metricPrefix)
 					if err != nil {
 						log.Errorf("Dogstatsd: error parsing metrics: %s", err)

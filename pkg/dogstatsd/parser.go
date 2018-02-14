@@ -10,7 +10,6 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
-	"strings"
 
 	log "github.com/cihub/seelog"
 
@@ -278,13 +277,8 @@ func parseMetricMessage(message []byte, namespace string) (*metrics.MetricSample
 		}
 	}
 
-	metricName := string(rawName)
-	if namespace != "" {
-		if !strings.HasSuffix(namespace, ".") {
-			namespace += "."
-			metricName = namespace + metricName
-		}
-	}
+	metricName := namespace + string(rawName)
+
 	metricType, ok := metricTypes[string(rawType)]
 	if !ok {
 		return nil, fmt.Errorf("invalid metric type for %q", message)
